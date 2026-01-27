@@ -1064,7 +1064,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   moveSpeed: 6
   jumpForce: 8
-  groundCheckDistance: 0.2
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
