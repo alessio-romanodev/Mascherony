@@ -15,6 +15,9 @@ public class PlayerInputHandler : MonoBehaviour
     // held input
     public bool JumpHeld { get; private set; }
 
+    // nuova proprietà per compatibilità con PlayerMovement
+    public bool DropDown => DropDownPressed;
+
     private void Awake()
     {
         inputActions = new PlayerInputActions();
