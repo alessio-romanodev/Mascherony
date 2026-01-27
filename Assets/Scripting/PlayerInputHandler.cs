@@ -6,9 +6,14 @@ public class PlayerInputHandler : MonoBehaviour
     private PlayerInputActions inputActions;
 
     public float MoveInput { get; private set; }
+
+    // one–frame inputs
     public bool JumpPressed { get; private set; }
     public bool DropDownPressed { get; private set; }
     public bool ActionPressed { get; private set; }
+
+    // held input
+    public bool JumpHeld { get; private set; }
 
     private void Awake()
     {
@@ -22,15 +27,24 @@ public class PlayerInputHandler : MonoBehaviour
         inputActions.Player.Move.performed += ctx =>
             MoveInput = ctx.ReadValue<float>();
 
-        inputActions.Player.Move.canceled += ctx =>
+        inputActions.Player.Move.canceled += _ =>
             MoveInput = 0f;
 
-        inputActions.Player.Jump.performed += _ =>
+        // JUMP
+        inputActions.Player.Jump.started += _ =>
             JumpPressed = true;
 
+        inputActions.Player.Jump.performed += _ =>
+            JumpHeld = true;
+
+        inputActions.Player.Jump.canceled += _ =>
+            JumpHeld = false;
+
+        // DROP DOWN
         inputActions.Player.DropDown.performed += _ =>
             DropDownPressed = true;
 
+        // ACTION
         inputActions.Player.Action.performed += _ =>
             ActionPressed = true;
     }
@@ -42,7 +56,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void LateUpdate()
     {
-        // reset input one-frame
+        // reset one-frame inputs
         JumpPressed = false;
         DropDownPressed = false;
         ActionPressed = false;

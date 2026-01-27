@@ -1062,12 +1062,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8dd667a4da9aa4baa86ba92e92de64c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  moveSpeed: 6
-  jumpForce: 8
+  moveSpeed: 8
+  jumpForce: 12
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  isGrounded: 0
+  jumpUpGravityMultiplier: 2
+  fallGravityMultiplier: 3
+  jumpCutGravityMultiplier: 3
+  jumpHangGravityMultiplier: 0.5
+  jumpHangVelocityThreshold: 0.1
+  maxFallSpeed: 20
+  isGrounded: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

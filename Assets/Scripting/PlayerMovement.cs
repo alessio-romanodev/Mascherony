@@ -11,6 +11,16 @@ public class PlayerMovement : MonoBehaviour
     [Header("Jump")]
     [SerializeField] private float jumpForce = 8f;
     [SerializeField] private LayerMask groundLayer;
+    [Header("Jump Tuning")]
+    [SerializeField] private float jumpUpGravityMultiplier = 1.5f;
+
+
+    [Header("Gravity Tuning (Hollow Knight style)")]
+    [SerializeField] private float fallGravityMultiplier = 2.5f;
+    [SerializeField] private float jumpCutGravityMultiplier = 2f;
+    [SerializeField] private float jumpHangGravityMultiplier = 0.5f;
+    [SerializeField] private float jumpHangVelocityThreshold = 0.1f;
+    [SerializeField] private float maxFallSpeed = 20f;
 
     private Rigidbody rb;
     private CapsuleCollider capsule;
@@ -18,7 +28,7 @@ public class PlayerMovement : MonoBehaviour
 
     [SerializeField] private bool isGrounded;
 
-    // Input buffer
+    // Jump buffer
     private bool jumpBuffered;
 
     private void Awake()
@@ -27,19 +37,12 @@ public class PlayerMovement : MonoBehaviour
         capsule = GetComponent<CapsuleCollider>();
         input = GetComponent<PlayerInputHandler>();
 
-        if (rb == null)
-            Debug.LogError("[PlayerMovement] Rigidbody mancante.", this);
-
-        if (capsule == null)
-            Debug.LogError("[PlayerMovement] CapsuleCollider mancante.", this);
-
-        if (input == null)
-            Debug.LogError("[PlayerMovement] PlayerInputHandler mancante.", this);
+        rb.freezeRotation = true;
     }
 
     private void Update()
     {
-        // Cattura input in Update
+        // buffer del salto
         if (input.JumpPressed)
             jumpBuffered = true;
     }
@@ -49,6 +52,7 @@ public class PlayerMovement : MonoBehaviour
         CheckGround();
         HandleMovement();
         HandleJump();
+        ApplyHollowKnightGravity();
     }
 
     private void HandleMovement()
@@ -71,9 +75,40 @@ public class PlayerMovement : MonoBehaviour
         rb.linearVelocity = velocity;
 
         jumpBuffered = false;
-
-        Debug.Log("salto");
     }
+
+    private void ApplyHollowKnightGravity()
+    {
+        Vector3 velocity = rb.linearVelocity;
+
+        // SALITA
+        if (velocity.y > 0f)
+        {
+            // Gravità più forte in salita → stesso apex, salita più rapida
+            velocity.y += Physics.gravity.y * (jumpUpGravityMultiplier - 1f) * Time.fixedDeltaTime;
+
+            // Jump hang vicino all'apice
+            if (Mathf.Abs(velocity.y) < jumpHangVelocityThreshold)
+            {
+                velocity.y += Physics.gravity.y * (jumpHangGravityMultiplier - 1f) * Time.fixedDeltaTime;
+            }
+
+            // Jump cut
+            if (!input.JumpHeld)
+            {
+                velocity.y += Physics.gravity.y * (jumpCutGravityMultiplier - 1f) * Time.fixedDeltaTime;
+            }
+        }
+        // DISCESA
+        else if (velocity.y < 0f)
+        {
+            velocity.y += Physics.gravity.y * (fallGravityMultiplier - 1f) * Time.fixedDeltaTime;
+            velocity.y = Mathf.Max(velocity.y, -maxFallSpeed);
+        }
+
+        rb.linearVelocity = velocity;
+    }
+
 
     private void CheckGround()
     {
