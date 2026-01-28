@@ -1,6 +1,5 @@
 using UnityEngine;
-using System.Collections; // necessario per IEnumerator
-
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
@@ -8,45 +7,53 @@ using System.Collections; // necessario per IEnumerator
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    [SerializeField] private float moveSpeed = 6f;
+    [SerializeField] private float moveSpeed = 8.5f;
+    [SerializeField] private float airControlMultiplier = 1f; // controllo totale in aria
 
     [Header("Jump")]
-    [SerializeField] private float jumpForce = 8f;
+    [SerializeField] private float jumpForce = 4f;
     [SerializeField] private LayerMask groundLayer;
 
-    [Header("Jump Tuning")]
-    [SerializeField] private float jumpUpGravityMultiplier = 1.5f;
+    [Header("Wall Jump / Slide")]
+    [SerializeField] private float wallJumpForceX = 7f;
+    [SerializeField] private float wallJumpForceY = 7f;
+    [SerializeField] private float wallJumpCoyoteTime = 0.12f;
+    [SerializeField] private float wallJumpLockTime = 0.08f;
+    [SerializeField] private float wallSlideSpeed = 7.5f; // MOLTO VELOCE
 
-    [Header("Wall Jump")]
-    [SerializeField] private float wallJumpForceX = 6f;
-    [SerializeField] private float wallJumpForceY = 8f;
-    [SerializeField] private float wallJumpCoyoteTime = 0.2f; // memoria del muro
-    private int wallDir = 0; // -1 = muro a sinistra, 1 = muro a destra, 0 = nessun muro
-    private float lastOnWallTime = 0f;
-    private bool isWallJumping = false;
-    [SerializeField] private float wallJumpDuration = 0.2f; // durata spinta orizzontale
-    private float wallJumpTimer = 0f;
+    [Header("Dash")]
+    [SerializeField] private float dashSpeed = 22f;
+    [SerializeField] private float dashDuration = 0.1f;
+    [SerializeField] private float dashCooldown = 0.3f;
 
-
-    [Header("Gravity Tuning (Hollow Knight style)")]
-    [SerializeField] private float fallGravityMultiplier = 2.5f;
-    [SerializeField] private float jumpCutGravityMultiplier = 2f;
-    [SerializeField] private float jumpHangGravityMultiplier = 0.5f;
-    [SerializeField] private float jumpHangVelocityThreshold = 0.1f;
-    [SerializeField] private float maxFallSpeed = 20f;
+    [Header("Gravity (Ultra Snappy)")]
+    [SerializeField] private float fallGravityMultiplier = 4.2f;
+    [SerializeField] private float jumpCutGravityMultiplier = 3f;
+    [SerializeField] private float maxFallSpeed = 30f;
 
     private Rigidbody rb;
     private CapsuleCollider capsule;
     private PlayerInputHandler input;
-    private Collider currentPlatform;
-    private Collider lastPlatformTouched;
 
-
-    [SerializeField] private bool isGrounded;
-
-    // Jump buffer e flag
+    private bool isGrounded;
     private bool jumpBuffered;
     private bool canJump = true;
+
+    // WALL
+    private int wallDir;
+    private float lastOnWallTime;
+    private float wallJumpTimer;
+    private bool isWallJumping;
+    private bool isWallSliding;
+
+    // DASH
+    private bool isDashing;
+    private bool canDash = true;
+    private float dashTimer;
+    private float dashCooldownTimer;
+    private int dashDirection = 1;
+
+    private Collider currentPlatform;
 
     private void Awake()
     {
@@ -61,125 +68,165 @@ public class PlayerMovement : MonoBehaviour
         if (input.JumpPressed)
             jumpBuffered = true;
 
-        // Riduzione timer coyote wall
+        if (input.DashPressed && canDash && !isDashing && dashCooldownTimer <= 0f)
+            StartDash();
+
         lastOnWallTime -= Time.deltaTime;
+        dashCooldownTimer -= Time.deltaTime;
     }
 
     private void FixedUpdate()
     {
         CheckGround();
-        HandleWallCollision();
+        HandleWallDetection();
+        HandleDash();
+        HandleWallSlide();
         HandleMovement();
         HandleJump();
-        ApplyHollowKnightGravity();
+        ApplyGravity();
     }
 
+    // ================= MOVEMENT =================
     private void HandleMovement()
     {
-        Vector3 velocity = rb.linearVelocity;
+        if (isDashing) return;
 
-        // Se non stiamo wall jumpando o la durata è finita
-        if (!isWallJumping)
+        Vector3 velocity = rb.linearVelocity;
+        float control = isGrounded ? 1f : airControlMultiplier;
+
+        if (isWallJumping)
         {
-            if (wallDir == 0 || Mathf.Sign(input.MoveInput) != wallDir)
-                velocity.x = input.MoveInput * moveSpeed;
-        }
-        else
-        {
-            // countdown timer wall jump
             wallJumpTimer -= Time.fixedDeltaTime;
+            control *= 0.75f;
+
             if (wallJumpTimer <= 0f)
                 isWallJumping = false;
         }
 
+        velocity.x = Mathf.Lerp(
+            velocity.x,
+            input.MoveInput * moveSpeed,
+            control
+        );
+
         rb.linearVelocity = velocity;
     }
 
-
+    // ================= JUMP =================
     private void HandleJump()
     {
         if (!jumpBuffered) return;
 
-        // DROP THROUGH PLATFORM
-        if (isGrounded && input.DropDown && input.JumpPressed)
+        if (isGrounded && input.DropDown)
         {
             DropThroughPlatform();
             jumpBuffered = false;
             return;
         }
 
-
         // WALL JUMP
-        if (!isGrounded && wallDir != 0)
+        if (!isGrounded && lastOnWallTime > 0f)
         {
             jumpBuffered = false;
-            int jumpDir = -wallDir;
-            Vector3 force = new Vector3(jumpDir * wallJumpForceX, wallJumpForceY, 0f);
 
-            Vector3 velocity = rb.linearVelocity;
-            if (velocity.y < 0f)
-                force.y -= velocity.y;
-
-            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
-            rb.AddForce(force, ForceMode.Impulse);
+            rb.linearVelocity = new Vector3(
+                -wallDir * wallJumpForceX,
+                wallJumpForceY,
+                0f
+            );
 
             isWallJumping = true;
-            wallJumpTimer = wallJumpDuration;
+            wallJumpTimer = wallJumpLockTime;
+            lastOnWallTime = 0f;
             wallDir = 0;
             return;
         }
 
-        // SALTO NORMALE
-        if (!canJump || !isGrounded) return;
+        // NORMAL JUMP
+        if (!isGrounded || !canJump) return;
 
-        Vector3 normalVelocity = rb.linearVelocity;
-        normalVelocity.y = jumpForce;
-        rb.linearVelocity = normalVelocity;
-
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, 0f);
         jumpBuffered = false;
         canJump = false;
     }
 
-
-
-
-    private void ApplyHollowKnightGravity()
+    // ================= WALL SLIDE =================
+    private void HandleWallSlide()
     {
+        isWallSliding =
+            !isGrounded &&
+            wallDir != 0 &&
+            rb.linearVelocity.y < 0f &&
+            !isDashing;
+
+        if (isWallSliding)
+        {
+            // NON annulliamo X, NON blocchiamo input
+            Vector3 velocity = rb.linearVelocity;
+            velocity.y = -wallSlideSpeed;
+            rb.linearVelocity = velocity;
+        }
+    }
+
+    // ================= DASH =================
+    private void StartDash()
+    {
+        isDashing = true;
+        canDash = false;
+        dashTimer = dashDuration;
+        dashCooldownTimer = dashCooldown;
+
+        if (Mathf.Abs(input.MoveInput) > 0.1f)
+            dashDirection = input.MoveInput > 0 ? 1 : -1;
+
+        rb.linearVelocity = new Vector3(dashDirection * dashSpeed, 0f, 0f);
+    }
+
+    private void HandleDash()
+    {
+        if (!isDashing) return;
+
+        dashTimer -= Time.fixedDeltaTime;
+        rb.linearVelocity = new Vector3(dashDirection * dashSpeed, 0f, 0f);
+
+        if (dashTimer <= 0f)
+            isDashing = false;
+    }
+
+    // ================= GRAVITY =================
+    private void ApplyGravity()
+    {
+        if (isDashing) return;
+
         Vector3 velocity = rb.linearVelocity;
 
-        // SALITA
-        if (velocity.y > 0f)
+        if (velocity.y > 0f && !input.JumpHeld)
         {
-            velocity.y += Physics.gravity.y * (jumpUpGravityMultiplier - 1f) * Time.fixedDeltaTime;
-
-            if (Mathf.Abs(velocity.y) < jumpHangVelocityThreshold)
-                velocity.y += Physics.gravity.y * (jumpHangGravityMultiplier - 1f) * Time.fixedDeltaTime;
-
-            if (!input.JumpHeld)
-                velocity.y += Physics.gravity.y * (jumpCutGravityMultiplier - 1f) * Time.fixedDeltaTime;
+            velocity.y += Physics.gravity.y * jumpCutGravityMultiplier * Time.fixedDeltaTime;
         }
-        // DISCESA
         else if (velocity.y < 0f)
         {
-            velocity.y += Physics.gravity.y * (fallGravityMultiplier - 1f) * Time.fixedDeltaTime;
+            velocity.y += Physics.gravity.y * fallGravityMultiplier * Time.fixedDeltaTime;
             velocity.y = Mathf.Max(velocity.y, -maxFallSpeed);
         }
 
         rb.linearVelocity = velocity;
     }
 
+    // ================= DETECTION =================
     private void CheckGround()
     {
-        float rayLength = (capsule.height / 2f) + 0.1f;
+        float rayLength = capsule.height / 2f + 0.1f;
         Vector3 origin = transform.position + Vector3.up * 0.05f;
 
+        RaycastHit hit;
         bool wasGrounded = isGrounded;
 
-        RaycastHit hit;
-        if (Physics.Raycast(origin, Vector3.down, out hit, rayLength, groundLayer, QueryTriggerInteraction.Ignore))
+        if (Physics.Raycast(origin, Vector3.down, out hit, rayLength, groundLayer))
         {
             isGrounded = true;
             canJump = true;
+            canDash = true;
             currentPlatform = hit.collider.CompareTag("Platform") ? hit.collider : null;
         }
         else
@@ -192,27 +239,14 @@ public class PlayerMovement : MonoBehaviour
             jumpBuffered = false;
     }
 
-
-
-    private void HandleWallCollision()
+    private void HandleWallDetection()
     {
         float rayLength = capsule.radius + 0.2f;
+        Vector3 center = transform.position;
 
-        Vector3 originCenter = transform.position;
-        Vector3 originTop = originCenter + Vector3.up * (capsule.height / 2f - capsule.radius);
-        Vector3 originBottom = originCenter + Vector3.down * (capsule.height / 2f - capsule.radius);
+        bool hitRight = Physics.Raycast(center, Vector3.right, rayLength);
+        bool hitLeft = Physics.Raycast(center, Vector3.left, rayLength);
 
-        // Rileva muro a destra
-        bool hitRight = Physics.Raycast(originCenter, Vector3.right, rayLength, Physics.AllLayers, QueryTriggerInteraction.Ignore) ||
-                        Physics.Raycast(originTop, Vector3.right, rayLength, Physics.AllLayers, QueryTriggerInteraction.Ignore) ||
-                        Physics.Raycast(originBottom, Vector3.right, rayLength, Physics.AllLayers, QueryTriggerInteraction.Ignore);
-
-        // Rileva muro a sinistra
-        bool hitLeft = Physics.Raycast(originCenter, Vector3.left, rayLength, Physics.AllLayers, QueryTriggerInteraction.Ignore) ||
-                       Physics.Raycast(originTop, Vector3.left, rayLength, Physics.AllLayers, QueryTriggerInteraction.Ignore) ||
-                       Physics.Raycast(originBottom, Vector3.left, rayLength, Physics.AllLayers, QueryTriggerInteraction.Ignore);
-
-        // Aggiorna wallDir e memoria coyote muro
         if (hitRight)
         {
             wallDir = 1;
@@ -227,35 +261,9 @@ public class PlayerMovement : MonoBehaviour
         {
             wallDir = 0;
         }
-
-        // Blocca il movimento verso il muro
-        Vector3 velocity = rb.linearVelocity;
-        if ((wallDir == 1 && input.MoveInput > 0) || (wallDir == -1 && input.MoveInput < 0))
-            velocity.x = 0f;
-
-        rb.linearVelocity = velocity;
-
-        // Debug visivo
-        Debug.DrawRay(originCenter, Vector3.right * rayLength, hitRight ? Color.green : Color.red);
-        Debug.DrawRay(originTop, Vector3.right * rayLength, hitRight ? Color.green : Color.red);
-        Debug.DrawRay(originBottom, Vector3.right * rayLength, hitRight ? Color.green : Color.red);
-
-        Debug.DrawRay(originCenter, Vector3.left * rayLength, hitLeft ? Color.green : Color.red);
-        Debug.DrawRay(originTop, Vector3.left * rayLength, hitLeft ? Color.green : Color.red);
-        Debug.DrawRay(originBottom, Vector3.left * rayLength, hitLeft ? Color.green : Color.red);
     }
 
-    private void OnDrawGizmosSelected()
-    {
-        if (capsule == null) return;
-
-        float rayLength = (capsule.height / 2f) + 0.1f;
-        Vector3 origin = transform.position + Vector3.up * 0.05f;
-
-        Gizmos.color = isGrounded ? Color.yellow : Color.red;
-        Gizmos.DrawLine(origin, origin + Vector3.down * rayLength);
-    }
-
+    // ================= PLATFORM DROP =================
     private void DropThroughPlatform()
     {
         if (currentPlatform == null) return;
@@ -264,30 +272,9 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator DropCoroutine(Collider platform)
     {
-        Physics.IgnoreCollision(platform, capsule, true); // ignora la piattaforma
-        yield return new WaitForSeconds(0.3f); // tempo per passare attraverso
+        Physics.IgnoreCollision(platform, capsule, true);
+        yield return new WaitForSeconds(0.2f);
         if (platform != null)
-            Physics.IgnoreCollision(platform, capsule, false); // ripristina collisione
+            Physics.IgnoreCollision(platform, capsule, false);
     }
-
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.collider.CompareTag("Platform") && rb.linearVelocity.y > 0)
-        {
-            //Physics.IgnoreCollision(collision.collider, capsule, true);
-            collision.collider.isTrigger = true;
-            lastPlatformTouched = collision.collider;
-            StartCoroutine(ReEnableCollision(collision.collider));
-        }
-    }
-
-    private IEnumerator ReEnableCollision(Collider platform)
-    {
-        yield return new WaitForSeconds(0.1f); // passa attraverso
-        if (platform != null)
-            lastPlatformTouched.isTrigger = true;
-        //Physics.IgnoreCollision(platform, capsule, false);
-    }
-
 }

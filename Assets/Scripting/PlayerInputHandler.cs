@@ -11,11 +11,11 @@ public class PlayerInputHandler : MonoBehaviour
     public bool JumpPressed { get; private set; }
     public bool DropDownPressed { get; private set; }
     public bool ActionPressed { get; private set; }
+    public bool DashPressed { get; private set; }
 
     // held input
     public bool JumpHeld { get; private set; }
 
-    // nuova proprietà per compatibilità con PlayerMovement
     public bool DropDown => DropDownPressed;
 
     private void Awake()
@@ -33,7 +33,6 @@ public class PlayerInputHandler : MonoBehaviour
         inputActions.Player.Move.canceled += _ =>
             MoveInput = 0f;
 
-        // JUMP
         inputActions.Player.Jump.started += _ =>
             JumpPressed = true;
 
@@ -43,13 +42,14 @@ public class PlayerInputHandler : MonoBehaviour
         inputActions.Player.Jump.canceled += _ =>
             JumpHeld = false;
 
-        // DROP DOWN
         inputActions.Player.DropDown.performed += _ =>
             DropDownPressed = true;
 
-        // ACTION
         inputActions.Player.Action.performed += _ =>
             ActionPressed = true;
+
+        inputActions.Player.Dash.performed += _ =>
+            DashPressed = true;
     }
 
     private void OnDisable()
@@ -59,9 +59,9 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void LateUpdate()
     {
-        // reset one-frame inputs
         JumpPressed = false;
         DropDownPressed = false;
         ActionPressed = false;
+        DashPressed = false;
     }
 }
