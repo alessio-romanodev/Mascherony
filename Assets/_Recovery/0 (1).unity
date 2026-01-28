@@ -296,12 +296,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.065403156, y: -0, z: -0, w: 0.99785894}
-  m_LocalPosition: {x: 0, y: 3.06, z: -9.5}
+  m_LocalRotation: {x: 0.065403156, y: 0, z: 0, w: 0.99785894}
+  m_LocalPosition: {x: 0, y: 4.25, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2117842562}
+  m_Father: {fileID: 1717408033}
   m_LocalEulerAnglesHint: {x: 7.5, y: 0, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
@@ -967,6 +967,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 330585546}
   - {fileID: 410087041}
   - {fileID: 832575519}
   m_Father: {fileID: 0}
@@ -1231,7 +1232,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 330585546}
   - {fileID: 321836263}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1288,13 +1288,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   moveSpeed: 8
   airControlMultiplier: 0.8
-  jumpForce: 10
+  jumpForce: 12
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  maxJumpHoldTime: 0.3
-  wallJumpForceX: 12
-  wallJumpForceY: 15
+  maxJumpHoldTime: 0.15
+  wallJumpForceX: 10
+  wallJumpForceY: 10
   wallJumpCoyoteTime: 0.2
   wallJumpLockTime: 0.15
   wallSlideSpeed: 5
@@ -1302,7 +1302,7 @@ MonoBehaviour:
   dashDuration: 0.3
   dashCooldown: 1
   fallGravityMultiplier: 6
-  jumpCutGravityMultiplier: 4
+  jumpCutGravityMultiplier: 2
   maxFallSpeed: 20
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

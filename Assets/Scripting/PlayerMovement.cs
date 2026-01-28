@@ -11,12 +11,16 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float airControlMultiplier = 1f;
 
     [Header("Jump")]
-    [SerializeField] private float jumpHeightMultiplier = 2.5f; // max 2.5x altezza player
+    [SerializeField] private float jumpForce = 8.5f;
     [SerializeField] private LayerMask groundLayer;
+
+    [Header("Jump Control")]
+    [SerializeField] private float maxJumpHoldTime = 0.15f; // LIMITE pressione spazio
+    private float jumpHoldTimer;
 
     [Header("Wall Jump / Slide")]
     [SerializeField] private float wallJumpForceX = 7f;
-    [SerializeField] private float wallJumpForceYMultiplier = 0.95f;
+    [SerializeField] private float wallJumpForceY = 8.2f;
     [SerializeField] private float wallJumpCoyoteTime = 0.12f;
     [SerializeField] private float wallJumpLockTime = 0.08f;
     [SerializeField] private float wallSlideSpeed = 7.5f;
@@ -38,9 +42,6 @@ public class PlayerMovement : MonoBehaviour
     private bool isGrounded;
     private bool jumpBuffered;
     private bool canJump = true;
-
-    // Jump force calcolata
-    private float jumpForce;
 
     // WALL
     private int wallDir;
@@ -64,11 +65,6 @@ public class PlayerMovement : MonoBehaviour
         capsule = GetComponent<CapsuleCollider>();
         input = GetComponent<PlayerInputHandler>();
         rb.freezeRotation = true;
-
-        // Calcolo jump force in base all’altezza del player
-        float playerHeight = capsule.height;
-        float gravity = Mathf.Abs(Physics.gravity.y) * fallGravityMultiplier;
-        jumpForce = Mathf.Sqrt(2f * gravity * playerHeight * jumpHeightMultiplier);
     }
 
     private void Update()
@@ -112,12 +108,9 @@ public class PlayerMovement : MonoBehaviour
 
         float targetX = input.MoveInput * moveSpeed;
 
-        // 🔑 FIX ANTI-STICK:
-        // se stai scivolando su un muro, ignora SOLO l’input che spinge CONTRO il muro
+        // ANTI-STICK: ignora input che spinge CONTRO il muro
         if (isWallSliding && Mathf.Sign(input.MoveInput) == wallDir)
-        {
             targetX = 0f;
-        }
 
         velocity.x = Mathf.Lerp(velocity.x, targetX, control);
         rb.linearVelocity = velocity;
@@ -143,10 +136,11 @@ public class PlayerMovement : MonoBehaviour
 
             rb.linearVelocity = new Vector3(
                 -wallDir * wallJumpForceX,
-                jumpForce * wallJumpForceYMultiplier,
+                wallJumpForceY,
                 0f
             );
 
+            jumpHoldTimer = maxJumpHoldTime;
             isWallJumping = true;
             wallJumpTimer = wallJumpLockTime;
             lastOnWallTime = 0f;
@@ -158,6 +152,8 @@ public class PlayerMovement : MonoBehaviour
         if (!isGrounded || !canJump) return;
 
         rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, 0f);
+        jumpHoldTimer = maxJumpHoldTime;
+
         jumpBuffered = false;
         canJump = false;
     }
@@ -211,9 +207,16 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 velocity = rb.linearVelocity;
 
-        if (velocity.y > 0f && !input.JumpHeld)
+        if (velocity.y > 0f)
         {
-            velocity.y += Physics.gravity.y * jumpCutGravityMultiplier * Time.fixedDeltaTime;
+            if (input.JumpHeld && jumpHoldTimer > 0f)
+            {
+                jumpHoldTimer -= Time.fixedDeltaTime;
+            }
+            else
+            {
+                velocity.y += Physics.gravity.y * jumpCutGravityMultiplier * Time.fixedDeltaTime;
+            }
         }
         else if (velocity.y < 0f)
         {
