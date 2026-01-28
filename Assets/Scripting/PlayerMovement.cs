@@ -13,10 +13,14 @@ public class PlayerMovement : MonoBehaviour
     [Header("Jump")]
     [SerializeField] private float jumpForce = 8.5f;
     [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private LayerMask oneWayPlatformLayer;
+    [SerializeField] private float jumpCoyoteTime = 0.12f;
+    public float lastOnGroundTime;
 
     [Header("Jump Control")]
-    [SerializeField] private float maxJumpHoldTime = 0.15f; // LIMITE pressione spazio
+    [SerializeField] private float maxJumpHoldTime = 0.15f;
     private float jumpHoldTimer;
+    public bool canBufferJump = true;
 
     [Header("Wall Jump / Slide")]
     [SerializeField] private float wallJumpForceX = 7f;
@@ -29,19 +33,28 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float dashSpeed = 22f;
     [SerializeField] private float dashDuration = 0.1f;
     [SerializeField] private float dashCooldown = 0.3f;
+    private int facingDirection = 1;
+
+    [Header("DashVisual")]
+    [SerializeField] private GameObject dashSprite;
+    [SerializeField] private float dashPositionModifier;
 
     [Header("Gravity")]
     [SerializeField] private float fallGravityMultiplier = 4.2f;
     [SerializeField] private float jumpCutGravityMultiplier = 3f;
     [SerializeField] private float maxFallSpeed = 30f;
 
+    [Header("Attack")]
+    [SerializeField] private Transform attackTransform;
+    [SerializeField] private float attackPositionModifier;
+
     private Rigidbody rb;
     private CapsuleCollider capsule;
     private PlayerInputHandler input;
 
-    private bool isGrounded;
+    public bool isGrounded;
     private bool jumpBuffered;
-    private bool canJump = true;
+    public bool canJump = true;
 
     // WALL
     private int wallDir;
@@ -65,6 +78,8 @@ public class PlayerMovement : MonoBehaviour
         capsule = GetComponent<CapsuleCollider>();
         input = GetComponent<PlayerInputHandler>();
         rb.freezeRotation = true;
+        if (dashSprite != null)
+            dashSprite.SetActive(false);
     }
 
     private void Update()
@@ -77,17 +92,20 @@ public class PlayerMovement : MonoBehaviour
 
         lastOnWallTime -= Time.deltaTime;
         dashCooldownTimer -= Time.deltaTime;
+
+        // CONTINUO CHECK DEL TERRENO PER EVITARE IL BLOCCO DEL SALTO
+        CheckGround();
     }
 
     private void FixedUpdate()
     {
-        CheckGround();
         HandleWallDetection();
         HandleDash();
         HandleWallSlide();
         HandleMovement();
         HandleJump();
         ApplyGravity();
+        UpdateAttackTransformPosition();
     }
 
     // ================= MOVEMENT =================
@@ -107,8 +125,11 @@ public class PlayerMovement : MonoBehaviour
         }
 
         float targetX = input.MoveInput * moveSpeed;
+        if (input.MoveInput > 0.1f)
+            facingDirection = 1;
+        else if (input.MoveInput < -0.1f)
+            facingDirection = -1;
 
-        // ANTI-STICK: ignora input che spinge CONTRO il muro
         if (isWallSliding && Mathf.Sign(input.MoveInput) == wallDir)
             targetX = 0f;
 
@@ -116,23 +137,40 @@ public class PlayerMovement : MonoBehaviour
         rb.linearVelocity = velocity;
     }
 
+    private void UpdateAttackTransformPosition()
+    {
+        if (attackTransform == null) return;
+
+        float dir = 0f;
+
+        if (input.MoveInput > 0.1f) dir = 1f;
+        else if (input.MoveInput < -0.1f) dir = -1f;
+        else return;
+
+        attackTransform.localPosition = new Vector3(
+            dir * Mathf.Abs(attackPositionModifier),
+            attackTransform.localPosition.y,
+            attackTransform.localPosition.z
+        );
+
+        if (dashSprite != null)
+        {
+            dashSprite.transform.localPosition = new Vector3(
+                dir * -Mathf.Abs(dashPositionModifier),
+                dashSprite.transform.localPosition.y,
+                dashSprite.transform.localPosition.z
+            );
+        }
+    }
+
     // ================= JUMP =================
     private void HandleJump()
     {
-        if (!jumpBuffered) return;
-
-        // DROP THROUGH PLATFORM
-        if (isGrounded && input.DropDown)
-        {
-            DropThroughPlatform();
-            jumpBuffered = false;
-            return;
-        }
-
         // WALL JUMP
-        if (!isGrounded && lastOnWallTime > 0f)
+        if (!isGrounded && lastOnWallTime > 0f && jumpBuffered)
         {
             jumpBuffered = false;
+            canBufferJump = false;
 
             rb.linearVelocity = new Vector3(
                 -wallDir * wallJumpForceX,
@@ -148,14 +186,17 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        // NORMAL JUMP
-        if (!isGrounded || !canJump) return;
+        // NORMAL JUMP con coyote time
+        if (jumpBuffered && (isGrounded || lastOnGroundTime > 0f) && canJump)
+        {
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, 0f);
+            jumpHoldTimer = maxJumpHoldTime;
 
-        rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, 0f);
-        jumpHoldTimer = maxJumpHoldTime;
-
-        jumpBuffered = false;
-        canJump = false;
+            jumpBuffered = false;
+            canJump = false;
+            canBufferJump = false;
+            lastOnGroundTime = 0f;
+        }
     }
 
     // ================= WALL SLIDE =================
@@ -182,9 +223,13 @@ public class PlayerMovement : MonoBehaviour
         canDash = false;
         dashTimer = dashDuration;
         dashCooldownTimer = dashCooldown;
+        if (dashSprite != null)
+            dashSprite.SetActive(true);
 
         if (Mathf.Abs(input.MoveInput) > 0.1f)
             dashDirection = input.MoveInput > 0 ? 1 : -1;
+        else
+            dashDirection = facingDirection;
 
         rb.linearVelocity = new Vector3(dashDirection * dashSpeed, 0f, 0f);
     }
@@ -197,7 +242,11 @@ public class PlayerMovement : MonoBehaviour
         rb.linearVelocity = new Vector3(dashDirection * dashSpeed, 0f, 0f);
 
         if (dashTimer <= 0f)
+        {
             isDashing = false;
+            if (dashSprite != null)
+                dashSprite.SetActive(false);
+        }
     }
 
     // ================= GRAVITY =================
@@ -210,13 +259,9 @@ public class PlayerMovement : MonoBehaviour
         if (velocity.y > 0f)
         {
             if (input.JumpHeld && jumpHoldTimer > 0f)
-            {
                 jumpHoldTimer -= Time.fixedDeltaTime;
-            }
             else
-            {
                 velocity.y += Physics.gravity.y * jumpCutGravityMultiplier * Time.fixedDeltaTime;
-            }
         }
         else if (velocity.y < 0f)
         {
@@ -228,30 +273,37 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ================= DETECTION =================
-    private void CheckGround()
+private void CheckGround()
+{
+    float rayLength = capsule.height / 2f + 0.15f;
+    Vector3 origin = transform.position + Vector3.up * 0.05f;
+
+    bool wasGrounded = isGrounded;
+    isGrounded = Physics.Raycast(origin, Vector3.down, out RaycastHit hit, rayLength, groundLayer);
+
+    if (isGrounded)
     {
-        float rayLength = capsule.height / 2f + 0.1f;
-        Vector3 origin = transform.position + Vector3.up * 0.05f;
+        lastOnGroundTime = jumpCoyoteTime;
 
-        RaycastHit hit;
-        bool wasGrounded = isGrounded;
+        // se siamo a terra resetta subito canJump
+        canJump = true;
+        canBufferJump = true;
 
-        if (Physics.Raycast(origin, Vector3.down, out hit, rayLength, groundLayer))
+        if (!wasGrounded)
         {
-            isGrounded = true;
-            canJump = true;
-            canDash = true;
-            currentPlatform = hit.collider.CompareTag("Platform") ? hit.collider : null;
-        }
-        else
-        {
-            isGrounded = false;
-            currentPlatform = null;
-        }
-
-        if (!wasGrounded && isGrounded)
+            jumpHoldTimer = 0f;
             jumpBuffered = false;
+        }
+
+        canDash = true;
     }
+    else
+    {
+        lastOnGroundTime -= Time.deltaTime;
+    }
+}
+
+
 
     private void HandleWallDetection()
     {
@@ -275,20 +327,5 @@ public class PlayerMovement : MonoBehaviour
         {
             wallDir = 0;
         }
-    }
-
-    // ================= PLATFORM DROP =================
-    private void DropThroughPlatform()
-    {
-        if (currentPlatform == null) return;
-        StartCoroutine(DropCoroutine(currentPlatform));
-    }
-
-    private IEnumerator DropCoroutine(Collider platform)
-    {
-        Physics.IgnoreCollision(platform, capsule, true);
-        yield return new WaitForSeconds(0.2f);
-        if (platform != null)
-            Physics.IgnoreCollision(platform, capsule, false);
     }
 }

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 286d799475fce4085a12fd8541ef13db
+guid: 2e2b1eaf256b448e08dddd165b13cd23
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -123,13 +123,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: actor_walk_20260127025618_0
+      name: dashwind_02_0
       rect:
         serializedVersion: 2
-        x: 0
+        x: 74
         y: 0
-        width: 256
-        height: 256
+        width: 71
+        height: 38
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -138,8 +138,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 35cbcb14678344f1396eaa5bff0fbe64
-      internalID: -675799623
+      spriteID: a9be4069203c94ac08110be1feaff926
+      internalID: 1172301631
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 0d2c182aebff74258aa4e0f40b5fa29b
+    spriteID: 6239c6321461c4cb39775c7df80b29f0
     internalID: 0
     vertices: []
     indices: 
@@ -158,9 +158,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries:
       - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":256.0,"y":256.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      actor_walk_20260127025618_0: -675799623
+      dashwind_02_0: 1172301631
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

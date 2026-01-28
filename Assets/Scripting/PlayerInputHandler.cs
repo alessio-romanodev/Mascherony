@@ -10,7 +10,7 @@ public class PlayerInputHandler : MonoBehaviour
     // one–frame inputs
     public bool JumpPressed { get; private set; }
     public bool DropDownPressed { get; private set; }
-    public bool ActionPressed { get; private set; }
+    public bool AttackPressed { get; private set; }
     public bool DashPressed { get; private set; }
 
     // held input
@@ -45,8 +45,8 @@ public class PlayerInputHandler : MonoBehaviour
         inputActions.Player.DropDown.performed += _ =>
             DropDownPressed = true;
 
-        inputActions.Player.Action.performed += _ =>
-            ActionPressed = true;
+        inputActions.Player.Attack.performed += _ =>
+            AttackPressed = true;
 
         inputActions.Player.Dash.performed += _ =>
             DashPressed = true;
@@ -61,7 +61,7 @@ public class PlayerInputHandler : MonoBehaviour
     {
         JumpPressed = false;
         DropDownPressed = false;
-        ActionPressed = false;
+        AttackPressed = false;
         DashPressed = false;
     }
 }
