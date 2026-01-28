@@ -6,6 +6,8 @@ using System.Collections;
 [RequireComponent(typeof(PlayerInputHandler))]
 public class PlayerMovement : MonoBehaviour
 {
+    public Transform lastCheckpoint;
+
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 8.5f;
     [SerializeField] private float airControlMultiplier = 1f;
