@@ -8,25 +8,25 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 8.5f;
-    [SerializeField] private float airControlMultiplier = 1f; // controllo totale in aria
+    [SerializeField] private float airControlMultiplier = 1f;
 
     [Header("Jump")]
-    [SerializeField] private float jumpForce = 4f;
+    [SerializeField] private float jumpHeightMultiplier = 2.5f; // max 2.5x altezza player
     [SerializeField] private LayerMask groundLayer;
 
     [Header("Wall Jump / Slide")]
     [SerializeField] private float wallJumpForceX = 7f;
-    [SerializeField] private float wallJumpForceY = 7f;
+    [SerializeField] private float wallJumpForceYMultiplier = 0.95f;
     [SerializeField] private float wallJumpCoyoteTime = 0.12f;
     [SerializeField] private float wallJumpLockTime = 0.08f;
-    [SerializeField] private float wallSlideSpeed = 7.5f; // MOLTO VELOCE
+    [SerializeField] private float wallSlideSpeed = 7.5f;
 
     [Header("Dash")]
     [SerializeField] private float dashSpeed = 22f;
     [SerializeField] private float dashDuration = 0.1f;
     [SerializeField] private float dashCooldown = 0.3f;
 
-    [Header("Gravity (Ultra Snappy)")]
+    [Header("Gravity")]
     [SerializeField] private float fallGravityMultiplier = 4.2f;
     [SerializeField] private float jumpCutGravityMultiplier = 3f;
     [SerializeField] private float maxFallSpeed = 30f;
@@ -38,6 +38,9 @@ public class PlayerMovement : MonoBehaviour
     private bool isGrounded;
     private bool jumpBuffered;
     private bool canJump = true;
+
+    // Jump force calcolata
+    private float jumpForce;
 
     // WALL
     private int wallDir;
@@ -61,6 +64,11 @@ public class PlayerMovement : MonoBehaviour
         capsule = GetComponent<CapsuleCollider>();
         input = GetComponent<PlayerInputHandler>();
         rb.freezeRotation = true;
+
+        // Calcolo jump force in base all’altezza del player
+        float playerHeight = capsule.height;
+        float gravity = Mathf.Abs(Physics.gravity.y) * fallGravityMultiplier;
+        jumpForce = Mathf.Sqrt(2f * gravity * playerHeight * jumpHeightMultiplier);
     }
 
     private void Update()
@@ -98,17 +106,20 @@ public class PlayerMovement : MonoBehaviour
         {
             wallJumpTimer -= Time.fixedDeltaTime;
             control *= 0.75f;
-
             if (wallJumpTimer <= 0f)
                 isWallJumping = false;
         }
 
-        velocity.x = Mathf.Lerp(
-            velocity.x,
-            input.MoveInput * moveSpeed,
-            control
-        );
+        float targetX = input.MoveInput * moveSpeed;
 
+        // 🔑 FIX ANTI-STICK:
+        // se stai scivolando su un muro, ignora SOLO l’input che spinge CONTRO il muro
+        if (isWallSliding && Mathf.Sign(input.MoveInput) == wallDir)
+        {
+            targetX = 0f;
+        }
+
+        velocity.x = Mathf.Lerp(velocity.x, targetX, control);
         rb.linearVelocity = velocity;
     }
 
@@ -117,6 +128,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (!jumpBuffered) return;
 
+        // DROP THROUGH PLATFORM
         if (isGrounded && input.DropDown)
         {
             DropThroughPlatform();
@@ -131,7 +143,7 @@ public class PlayerMovement : MonoBehaviour
 
             rb.linearVelocity = new Vector3(
                 -wallDir * wallJumpForceX,
-                wallJumpForceY,
+                jumpForce * wallJumpForceYMultiplier,
                 0f
             );
 
@@ -161,7 +173,6 @@ public class PlayerMovement : MonoBehaviour
 
         if (isWallSliding)
         {
-            // NON annulliamo X, NON blocchiamo input
             Vector3 velocity = rb.linearVelocity;
             velocity.y = -wallSlideSpeed;
             rb.linearVelocity = velocity;

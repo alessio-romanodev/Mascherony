@@ -708,7 +708,7 @@ Transform:
   m_GameObject: {fileID: 906279183}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.79, z: 0}
+  m_LocalPosition: {x: 0, y: 10.55, z: 0}
   m_LocalScale: {x: 100, y: 0.25, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1287,21 +1287,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   moveSpeed: 8
-  jumpForce: 12
+  airControlMultiplier: 0.8
+  jumpHeightMultiplier: 2.5
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  jumpUpGravityMultiplier: 2
   wallJumpForceX: 16
-  wallJumpForceY: 8
+  wallJumpForceYMultiplier: 0.95
   wallJumpCoyoteTime: 0.2
-  wallJumpDuration: 0.2
+  wallJumpLockTime: 0.15
+  wallSlideSpeed: 2
+  dashSpeed: 18
+  dashDuration: 0.15
+  dashCooldown: 0.4
   fallGravityMultiplier: 3
   jumpCutGravityMultiplier: 3
-  jumpHangGravityMultiplier: 0.5
-  jumpHangVelocityThreshold: 0.1
   maxFallSpeed: 20
-  isGrounded: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
