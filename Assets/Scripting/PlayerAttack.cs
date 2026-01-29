@@ -93,4 +93,5 @@ public class PlayerAttack : MonoBehaviour
             new Vector3(attackSize.x, attackSize.y, attackSize.y)
         );
     }
+  
 }
