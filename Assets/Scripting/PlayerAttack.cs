@@ -12,10 +12,25 @@ public class PlayerAttack : MonoBehaviour
 
     private float lastAttackTime;
 
+    [SerializeField] private Animator attackAnimator;
+    [SerializeField] private SpriteRenderer attackSpriteRenderer;
+
     private void Awake()
     {
         if (input == null)
             input = GetComponent<PlayerInputHandler>();
+
+        if (sideAttackTransform != null)
+        {
+            attackAnimator = sideAttackTransform.GetComponent<Animator>();
+            attackSpriteRenderer = sideAttackTransform.GetComponent<SpriteRenderer>();
+        }
+
+        if (attackAnimator == null)
+            Debug.LogWarning("PlayerAttack: Animator non trovato su SideAttackTransform");
+
+        if (attackSpriteRenderer == null)
+            Debug.LogWarning("PlayerAttack: SpriteRenderer non trovato su SideAttackTransform");
     }
 
     private void Update()
@@ -24,6 +39,9 @@ public class PlayerAttack : MonoBehaviour
         {
             PerformAttack();
         }
+        if (sideAttackTransform.localPosition.x < 0f)
+            attackSpriteRenderer.flipX = true;
+        else attackSpriteRenderer.flipX = false;
     }
 
     private bool CanAttack()
@@ -34,6 +52,12 @@ public class PlayerAttack : MonoBehaviour
     private void PerformAttack()
     {
         lastAttackTime = Time.time;
+
+        // Trigger animazione
+        if (attackAnimator != null)
+        {
+            attackAnimator.SetTrigger("Attack");
+        }
 
         Collider[] hits = Physics.OverlapBox(
             sideAttackTransform.position,
@@ -49,7 +73,7 @@ public class PlayerAttack : MonoBehaviour
             {
                 Debug.Log("Colpito target: " + hit.name);
                 Destroy(hit.gameObject);
-                //altra logica
+                // altra logica
             }
         }
     }
@@ -64,6 +88,9 @@ public class PlayerAttack : MonoBehaviour
             sideAttackTransform.rotation,
             Vector3.one
         );
-        Gizmos.DrawWireCube(Vector3.zero, new Vector3(attackSize.x, attackSize.y, attackSize.y));
+        Gizmos.DrawWireCube(
+            Vector3.zero,
+            new Vector3(attackSize.x, attackSize.y, attackSize.y)
+        );
     }
 }

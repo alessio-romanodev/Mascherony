@@ -41,6 +41,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("DashVisual")]
     [SerializeField] private GameObject dashSprite;
     [SerializeField] private float dashPositionModifier;
+    [SerializeField] private SpriteRenderer dashSpriteRenderer;
 
     [Header("Gravity")]
     [SerializeField] private float fallGravityMultiplier = 4.2f;
@@ -74,6 +75,13 @@ public class PlayerMovement : MonoBehaviour
     private int dashDirection = 1;
 
     private Collider currentPlatform;
+
+    //Animator
+    public Vector3 Velocity => rb.linearVelocity;
+    public bool IsGrounded => isGrounded;
+    public bool IsDashing => isDashing;
+    public bool IsWallSliding => isWallSliding;
+    public bool IsDead { get; private set; }
 
     private void Awake()
     {
@@ -154,8 +162,17 @@ public class PlayerMovement : MonoBehaviour
 
         float dir = 0f;
 
-        if (input.MoveInput > 0.1f) dir = 1f;
-        else if (input.MoveInput < -0.1f) dir = -1f;
+        if (input.MoveInput > 0.1f)
+        {
+            dir = 1f;
+            dashSpriteRenderer.flipX = false;
+        }
+        else if (input.MoveInput < -0.1f)
+        {
+            dir = -1f;
+            dashSpriteRenderer.flipX = true;
+
+        }
         else return;
 
         attackTransform.localPosition = new Vector3(
@@ -338,5 +355,9 @@ public class PlayerMovement : MonoBehaviour
         {
             wallDir = 0;
         }
+    }
+     public void SetDead(bool value)
+    {
+        IsDead = value;
     }
 }

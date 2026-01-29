@@ -34,9 +34,34 @@ public class KillZone : MonoBehaviour
         PlayerMovement player = other.GetComponent<PlayerMovement>();
         if (player != null && player.lastCheckpoint != null)
         {
+            player.SetDead(true);
             StartCoroutine(RespawnPlayer(player));
         }
     }
+    private void OnTriggerStay(Collider other)
+    {
+        if (isRespawning) return;
+
+        PlayerMovement player = other.GetComponent<PlayerMovement>();
+        if (player != null && player.lastCheckpoint != null)
+        {
+            player.SetDead(true);
+            StartCoroutine(RespawnPlayer(player));
+        }
+    }
+
+private void OnTriggerExit(Collider other)
+    {
+        if (isRespawning) return;
+
+        PlayerMovement player = other.GetComponent<PlayerMovement>();
+        if (player != null && player.lastCheckpoint != null)
+        {
+            player.SetDead(true);
+            StartCoroutine(RespawnPlayer(player));
+        }
+    }
+   
 
     private IEnumerator RespawnPlayer(PlayerMovement player)
     {
@@ -64,6 +89,7 @@ public class KillZone : MonoBehaviour
         }
 
         // Respawn player
+        player.SetDead(false);
         player.transform.position = player.lastCheckpoint.position;
         if (rb != null)
             rb.linearVelocity = Vector3.zero; // assicura che non si muova subito
