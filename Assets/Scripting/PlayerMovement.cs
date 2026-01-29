@@ -11,6 +11,7 @@ public class PlayerMovement : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 8.5f;
     [SerializeField] private float airControlMultiplier = 1f;
+    public bool canMove = true;
 
     [Header("Jump")]
     [SerializeField] private float jumpForce = 8.5f;
@@ -86,14 +87,18 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        if (input.JumpPressed)
-            jumpBuffered = true;
+        if (canMove)
+        {
+            if (input.JumpPressed)
+                jumpBuffered = true;
 
-        if (input.DashPressed && canDash && !isDashing && dashCooldownTimer <= 0f)
-            StartDash();
+            if (input.DashPressed && canDash && !isDashing && dashCooldownTimer <= 0f)
+                StartDash();
 
-        lastOnWallTime -= Time.deltaTime;
-        dashCooldownTimer -= Time.deltaTime;
+            lastOnWallTime -= Time.deltaTime;
+            dashCooldownTimer -= Time.deltaTime;
+        }
+
 
         // CONTINUO CHECK DEL TERRENO PER EVITARE IL BLOCCO DEL SALTO
         CheckGround();
@@ -101,13 +106,17 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        HandleWallDetection();
-        HandleDash();
-        HandleWallSlide();
-        HandleMovement();
-        HandleJump();
-        ApplyGravity();
-        UpdateAttackTransformPosition();
+        if (canMove)
+        {
+            HandleWallDetection();
+            HandleDash();
+            HandleWallSlide();
+            HandleMovement();
+            HandleJump();
+            ApplyGravity();
+            UpdateAttackTransformPosition();
+        }
+
     }
 
     // ================= MOVEMENT =================
@@ -275,35 +284,35 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ================= DETECTION =================
-private void CheckGround()
-{
-    float rayLength = capsule.height / 2f + 0.15f;
-    Vector3 origin = transform.position + Vector3.up * 0.05f;
-
-    bool wasGrounded = isGrounded;
-    isGrounded = Physics.Raycast(origin, Vector3.down, out RaycastHit hit, rayLength, groundLayer);
-
-    if (isGrounded)
+    private void CheckGround()
     {
-        lastOnGroundTime = jumpCoyoteTime;
+        float rayLength = capsule.height / 2f + 0.15f;
+        Vector3 origin = transform.position + Vector3.up * 0.05f;
 
-        // se siamo a terra resetta subito canJump
-        canJump = true;
-        canBufferJump = true;
+        bool wasGrounded = isGrounded;
+        isGrounded = Physics.Raycast(origin, Vector3.down, out RaycastHit hit, rayLength, groundLayer);
 
-        if (!wasGrounded)
+        if (isGrounded)
         {
-            jumpHoldTimer = 0f;
-            jumpBuffered = false;
-        }
+            lastOnGroundTime = jumpCoyoteTime;
 
-        canDash = true;
+            // se siamo a terra resetta subito canJump
+            canJump = true;
+            canBufferJump = true;
+
+            if (!wasGrounded)
+            {
+                jumpHoldTimer = 0f;
+                jumpBuffered = false;
+            }
+
+            canDash = true;
+        }
+        else
+        {
+            lastOnGroundTime -= Time.deltaTime;
+        }
     }
-    else
-    {
-        lastOnGroundTime -= Time.deltaTime;
-    }
-}
 
 
 
@@ -312,8 +321,8 @@ private void CheckGround()
         float rayLength = capsule.radius + 0.2f;
         Vector3 center = transform.position;
 
-        bool hitRight = Physics.Raycast(center, Vector3.right, rayLength);
-        bool hitLeft = Physics.Raycast(center, Vector3.left, rayLength);
+        bool hitRight = Physics.Raycast(center, Vector3.right, rayLength, groundLayer);
+        bool hitLeft = Physics.Raycast(center, Vector3.left, rayLength, groundLayer);
 
         if (hitRight)
         {

@@ -43,8 +43,7 @@ public class KillZone : MonoBehaviour
         isRespawning = true;
 
         // Blocca input e movimento
-        player.canJump = false;
-        player.canBufferJump = false;
+        player.canMove = false;
 
         // Azzeriamo la velocity per evitare che il FixedUpdate sovrascriva la posizione
         Rigidbody rb = player.GetComponent<Rigidbody>();
@@ -69,9 +68,10 @@ public class KillZone : MonoBehaviour
         if (rb != null)
             rb.linearVelocity = Vector3.zero; // assicura che non si muova subito
 
-        // Attendere un frame per stabilizzare la posizione
-        yield return null;
+        player.transform.position = player.lastCheckpoint.position;
 
+        // Attendere un frame per stabilizzare la posizione
+        yield return new WaitForSeconds(0.5f);
         // Fade out
         if (blackScreen != null)
         {
@@ -86,8 +86,7 @@ public class KillZone : MonoBehaviour
         }
 
         // Riabilita salto e buffer
-        player.canJump = true;
-        player.canBufferJump = true;
+        player.canMove = true;
 
         isRespawning = false;
     }
