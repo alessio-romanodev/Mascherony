@@ -59,6 +59,8 @@ public class PlayerAttack : MonoBehaviour
 
         if (attackAnimator != null)
             attackAnimator.SetTrigger("Attack");
+            AudioManager.Instance.PlayAttack();
+
 
         Collider[] hits = Physics.OverlapBox(
             sideAttackTransform.position,
@@ -75,6 +77,7 @@ public class PlayerAttack : MonoBehaviour
 
             // RIMBALZA SOLO IL PLAYER
             playerMovement.Bounce(bounceForce);
+
 
             // una sola attivazione per attacco
             break;

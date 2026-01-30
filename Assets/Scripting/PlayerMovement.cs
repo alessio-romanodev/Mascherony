@@ -211,6 +211,8 @@ public class PlayerMovement : MonoBehaviour
             wallJumpTimer = wallJumpLockTime;
             lastOnWallTime = 0f;
             wallDir = 0;
+            AudioManager.Instance.PlayJump();
+
             return;
         }
 
@@ -224,6 +226,8 @@ public class PlayerMovement : MonoBehaviour
             canJump = false;
             canBufferJump = false;
             lastOnGroundTime = 0f;
+            AudioManager.Instance.PlayJump();
+
         }
     }
 
@@ -260,6 +264,8 @@ public class PlayerMovement : MonoBehaviour
             dashDirection = facingDirection;
 
         rb.linearVelocity = new Vector3(dashDirection * dashSpeed, 0f, 0f);
+        AudioManager.Instance.PlayDash();
+
     }
 
     private void HandleDash()
