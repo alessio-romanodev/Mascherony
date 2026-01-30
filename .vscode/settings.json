@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Mascherony.slnx"
+    "dotnet.defaultSolution": "mascherony.slnx"
 }

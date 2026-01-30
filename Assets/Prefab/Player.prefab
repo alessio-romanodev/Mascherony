@@ -192,8 +192,9 @@ GameObject:
   m_Component:
   - component: {fileID: 2324445643466808137}
   - component: {fileID: 1242026179971656734}
-  - component: {fileID: 2970537935195712551}
   - component: {fileID: 3295988651091187785}
+  - component: {fileID: 5679502064115914678}
+  - component: {fileID: 3219105391176451167}
   m_Layer: 0
   m_Name: PlayerSprite
   m_TagString: Untagged
@@ -278,7 +279,19 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!95 &2970537935195712551
+--- !u!114 &3295988651091187785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3368176612845144968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5c89bba4a922cc48a1f1156b51c89a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimationController
+--- !u!95 &5679502064115914678
 Animator:
   serializedVersion: 7
   m_ObjectHideFlags: 0
@@ -300,7 +313,7 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &3295988651091187785
+--- !u!114 &3219105391176451167
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -412,8 +425,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6430370277138827172}
-  - component: {fileID: 9123666304902567242}
-  - component: {fileID: 15495883625450803}
+  - component: {fileID: 8404867303548365005}
+  - component: {fileID: 6076924793363286222}
   m_Layer: 0
   m_Name: SideAttackTransform
   m_TagString: Untagged
@@ -436,7 +449,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 3593057324508135772}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &9123666304902567242
+--- !u!212 &8404867303548365005
 SpriteRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
@@ -495,7 +508,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
---- !u!95 &15495883625450803
+--- !u!95 &6076924793363286222
 Animator:
   serializedVersion: 7
   m_ObjectHideFlags: 0
