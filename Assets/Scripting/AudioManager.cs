@@ -12,8 +12,10 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip jumpSfx;
     [SerializeField] private AudioClip attackSfx;
     [SerializeField] private AudioClip dashSfx;
-    [SerializeField] private AudioClip footstepSfx;
     [SerializeField] private AudioClip objectSfx;
+
+    [Header("Footsteps")]
+    [SerializeField] private AudioClip[] footstepSfx;
 
     [Header("SFX Settings")]
     [SerializeField] private float sfxVolume = 1f;
@@ -49,8 +51,16 @@ public class AudioManager : MonoBehaviour
     public void PlayJump()     => PlaySFX(jumpSfx);
     public void PlayAttack()   => PlaySFX(attackSfx);
     public void PlayDash()     => PlaySFX(dashSfx);
-    public void PlayFootstep() => PlaySFX(footstepSfx);
     public void PlayObject()   => PlaySFX(objectSfx);
+
+    // ================= Footstep =================
+    public void PlayFootstep()
+    {
+        if (footstepSfx == null || footstepSfx.Length == 0) return;
+
+        AudioClip clip = footstepSfx[Random.Range(0, footstepSfx.Length)];
+        PlaySFX(clip);
+    }
 
     private void PlaySFX(AudioClip clip)
     {
@@ -62,7 +72,7 @@ public class AudioManager : MonoBehaviour
         AudioSource source = sfxObj.AddComponent<AudioSource>();
         source.clip = clip;
         source.volume = sfxVolume;
-        source.pitch = Random.Range(0.8f, 0.95f);
+        source.pitch = Random.Range(0.95f, 1.05f);
         source.Play();
 
         Destroy(sfxObj, clip.length / source.pitch);

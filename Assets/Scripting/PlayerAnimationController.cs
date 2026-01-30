@@ -37,5 +37,10 @@ public class PlayerAnimationController : MonoBehaviour
         else if (xVelocity < -0.1f)
             spriteRenderer.flipX = true;
     }
+    public void PlayFootstep()
+{
+    AudioManager.Instance.PlayFootstep();
+}
+
 
 }
