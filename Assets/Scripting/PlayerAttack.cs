@@ -5,32 +5,33 @@ public class PlayerAttack : MonoBehaviour
     [Header("References")]
     [SerializeField] private Transform sideAttackTransform;
     [SerializeField] private PlayerInputHandler input;
+    [SerializeField] private PlayerMovement playerMovement;
 
     [Header("Attack Settings")]
     [SerializeField] private Vector2 attackSize = new Vector2(1.2f, 0.8f);
     [SerializeField] private float attackCooldown = 0.25f;
 
+    [Header("Bounce")]
+    [SerializeField] private float bounceForce = 9f;
+
     private float lastAttackTime;
 
-    [SerializeField] private Animator attackAnimator;
-    [SerializeField] private SpriteRenderer attackSpriteRenderer;
+    private Animator attackAnimator;
+    private SpriteRenderer attackSpriteRenderer;
 
     private void Awake()
     {
         if (input == null)
             input = GetComponent<PlayerInputHandler>();
 
+        if (playerMovement == null)
+            playerMovement = GetComponent<PlayerMovement>();
+
         if (sideAttackTransform != null)
         {
             attackAnimator = sideAttackTransform.GetComponent<Animator>();
             attackSpriteRenderer = sideAttackTransform.GetComponent<SpriteRenderer>();
         }
-
-        if (attackAnimator == null)
-            Debug.LogWarning("PlayerAttack: Animator non trovato su SideAttackTransform");
-
-        if (attackSpriteRenderer == null)
-            Debug.LogWarning("PlayerAttack: SpriteRenderer non trovato su SideAttackTransform");
     }
 
     private void Update()
@@ -39,13 +40,13 @@ public class PlayerAttack : MonoBehaviour
         {
             PerformAttack();
         }
-        if (sideAttackTransform.localPosition.x < 0f)
-            attackSpriteRenderer.flipX = true;
-        else attackSpriteRenderer.flipX = false;
     }
 
     private bool CanAttack()
     {
+        if (playerMovement != null && playerMovement.isGrounded)
+            return false;
+
         return Time.time >= lastAttackTime + attackCooldown;
     }
 
@@ -53,11 +54,11 @@ public class PlayerAttack : MonoBehaviour
     {
         lastAttackTime = Time.time;
 
-        // Trigger animazione
+        if (attackSpriteRenderer != null)
+            attackSpriteRenderer.flipX = sideAttackTransform.localPosition.x < 0f;
+
         if (attackAnimator != null)
-        {
             attackAnimator.SetTrigger("Attack");
-        }
 
         Collider[] hits = Physics.OverlapBox(
             sideAttackTransform.position,
@@ -69,12 +70,14 @@ public class PlayerAttack : MonoBehaviour
 
         foreach (Collider hit in hits)
         {
-            if (hit.CompareTag("Target"))
-            {
-                Debug.Log("Colpito target: " + hit.name);
-                Destroy(hit.gameObject);
-                // altra logica
-            }
+            if (!hit.CompareTag("Target"))
+                continue;
+
+            // RIMBALZA SOLO IL PLAYER
+            playerMovement.Bounce(bounceForce);
+
+            // una sola attivazione per attacco
+            break;
         }
     }
 
@@ -93,5 +96,4 @@ public class PlayerAttack : MonoBehaviour
             new Vector3(attackSize.x, attackSize.y, attackSize.y)
         );
     }
-  
 }

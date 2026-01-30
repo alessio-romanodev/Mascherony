@@ -1959,6 +1959,10 @@ PrefabInstance:
       propertyPath: dashSpriteRenderer
       value: 
       objectReference: {fileID: 2126099862}
+    - target: {fileID: 3054062941917967270, guid: 429d2377cb4ab4869978313fea2b5db5, type: 3}
+      propertyPath: attackPositionModifier
+      value: 0.1
+      objectReference: {fileID: 0}
     - target: {fileID: 3368176612845144968, guid: 429d2377cb4ab4869978313fea2b5db5, type: 3}
       propertyPath: m_Name
       value: PlayerSprite
@@ -2016,8 +2020,12 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6430370277138827172, guid: 429d2377cb4ab4869978313fea2b5db5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6430370277138827172, guid: 429d2377cb4ab4869978313fea2b5db5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.5
+      value: -2
       objectReference: {fileID: 0}
     - target: {fileID: 6430370277138827172, guid: 429d2377cb4ab4869978313fea2b5db5, type: 3}
       propertyPath: m_ConstrainProportionsScale
@@ -2026,6 +2034,10 @@ PrefabInstance:
     - target: {fileID: 7972020720767724065, guid: 429d2377cb4ab4869978313fea2b5db5, type: 3}
       propertyPath: m_Name
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 8314128035076940674, guid: 429d2377cb4ab4869978313fea2b5db5, type: 3}
+      propertyPath: bounceForce
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 8314128035076940674, guid: 429d2377cb4ab4869978313fea2b5db5, type: 3}
       propertyPath: attackAnimator

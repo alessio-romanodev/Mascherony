@@ -356,8 +356,27 @@ public class PlayerMovement : MonoBehaviour
             wallDir = 0;
         }
     }
-     public void SetDead(bool value)
+    public void SetDead(bool value)
     {
         IsDead = value;
     }
+    public void Bounce(float bounceForce)
+    {
+        // reset verticale per consistenza
+        Vector3 v = rb.linearVelocity;
+        v.y = 0f;
+        rb.linearVelocity = v;
+
+        // applica rimbalzo come un salto
+        rb.AddForce(Vector3.up * bounceForce, ForceMode.VelocityChange);
+
+        // reset stati come se fosse un salto
+        canJump = false;
+        lastOnGroundTime = 0f;
+        isGrounded = false;
+        jumpHoldTimer = 0f;
+    }
+
 }
+
+
